@@ -23,6 +23,9 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
       - name: Authenticate to Google Cloud
         shell: bash
         env:
@@ -72,9 +75,6 @@ jobs:
           enable_docker_install_startup_script = ${{ vars.GCE_ENABLE_DOCKER_INSTALL_STARTUP_SCRIPT || 'true' }}
           vm_service_account_email = "${{ vars.GCE_VM_SERVICE_ACCOUNT_EMAIL }}"
           EOF
-
-      - name: Terraform fmt
-        run: terraform fmt -check -recursive
 
       - name: Terraform init
         run: |
