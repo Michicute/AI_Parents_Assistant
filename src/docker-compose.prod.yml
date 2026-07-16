@@ -1,0 +1,185 @@
+name: c2app
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - db
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../deploy/ec2/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../deploy/ec2/nginx/conf.d/active-upstreams.conf:/etc/nginx/conf.d/active-upstreams.conf:ro
+      - ../deploy/ec2/nginx/certs:/etc/nginx/certs:ro
+    restart: unless-stopped
+
+  frontend-blue:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+    depends_on:
+      - backend-blue
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  backend-blue:
+    build:
+      context: ./apps/backend
+    environment:
+      APP_ENV: production
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-45}
+      OPENAI_MAX_RETRIES: ${OPENAI_MAX_RETRIES:-1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      RAG_AUTO_INGEST_ON_STARTUP: ${RAG_AUTO_INGEST_ON_STARTUP:-false}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      APP_SESSION_EPOCH: ${APP_SESSION_EPOCH:-}
+      DATABASE_URL: ${DATABASE_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      ZALO_SERVICE_URL: http://zalo-bot-service-blue:4001
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET}
+      ZALO_LINK_SESSION_TTL_MINUTES: ${ZALO_LINK_SESSION_TTL_MINUTES:-30}
+      ZALO_SESSION_ENCRYPTION_KEY: ${ZALO_SESSION_ENCRYPTION_KEY:-}
+      SCHEDULED_ZALO_WORKER_ENABLED: ${SCHEDULED_ZALO_WORKER_ENABLED_BLUE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  zalo-bot-service-blue:
+    build:
+      context: ./apps/zalo-bot-service
+    environment:
+      PORT: 4001
+      BACKEND_URL: http://backend-blue:8000
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET}
+      ZALO_ADAPTER: ${ZALO_ADAPTER:-zca-js}
+      ZALO_ACCOUNT_LABEL: ${ZALO_ACCOUNT_LABEL:-default}
+      ZALO_LANGUAGE: ${ZALO_LANGUAGE:-vi}
+      ZALO_BOT_CHAT_URL: ${ZALO_BOT_CHAT_URL:-}
+      ZALO_BOT_DISPLAY_NAME: ${ZALO_BOT_DISPLAY_NAME:-Zalo Bot trung tam}
+      ZALO_LINK_MESSAGE_PREFIX: ${ZALO_LINK_MESSAGE_PREFIX:-LINK}
+      ZALO_BOT_ENABLED: ${ZALO_BOT_ENABLED_BLUE:-false}
+    depends_on:
+      - backend-blue
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  frontend-green:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+    depends_on:
+      - backend-green
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  backend-green:
+    build:
+      context: ./apps/backend
+    environment:
+      APP_ENV: production
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-45}
+      OPENAI_MAX_RETRIES: ${OPENAI_MAX_RETRIES:-1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      RAG_AUTO_INGEST_ON_STARTUP: ${RAG_AUTO_INGEST_ON_STARTUP:-false}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      APP_SESSION_EPOCH: ${APP_SESSION_EPOCH:-}
+      DATABASE_URL: ${DATABASE_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      ZALO_SERVICE_URL: http://zalo-bot-service-green:4001
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET}
+      ZALO_LINK_SESSION_TTL_MINUTES: ${ZALO_LINK_SESSION_TTL_MINUTES:-30}
+      ZALO_SESSION_ENCRYPTION_KEY: ${ZALO_SESSION_ENCRYPTION_KEY:-}
+      SCHEDULED_ZALO_WORKER_ENABLED: ${SCHEDULED_ZALO_WORKER_ENABLED_GREEN:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  zalo-bot-service-green:
+    build:
+      context: ./apps/zalo-bot-service
+    environment:
+      PORT: 4001
+      BACKEND_URL: http://backend-green:8000
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET}
+      ZALO_ADAPTER: ${ZALO_ADAPTER:-zca-js}
+      ZALO_ACCOUNT_LABEL: ${ZALO_ACCOUNT_LABEL:-default}
+      ZALO_LANGUAGE: ${ZALO_LANGUAGE:-vi}
+      ZALO_BOT_CHAT_URL: ${ZALO_BOT_CHAT_URL:-}
+      ZALO_BOT_DISPLAY_NAME: ${ZALO_BOT_DISPLAY_NAME:-Zalo Bot trung tam}
+      ZALO_LINK_MESSAGE_PREFIX: ${ZALO_LINK_MESSAGE_PREFIX:-LINK}
+      ZALO_BOT_ENABLED: ${ZALO_BOT_ENABLED_GREEN:-false}
+    depends_on:
+      - backend-green
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-c2_app}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-c2_app}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

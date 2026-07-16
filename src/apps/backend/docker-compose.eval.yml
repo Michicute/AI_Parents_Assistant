@@ -1,0 +1,72 @@
+services:
+  eval-db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: c2_app_eval
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d c2_app_eval"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  eval-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.eval
+    command: ["python", "-m", "evals.seed"]
+    depends_on:
+      eval-db:
+        condition: service_healthy
+    environment: &eval-environment
+      APP_ENV: evaluation
+      AI_PROVIDER: openai
+      EMBEDDING_PROVIDER: openai
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY must be set in src/.env}
+      OPENAI_MODEL: gpt-4.1-mini
+      OPENAI_CHAT_MODEL: gpt-4.1-mini
+      OPENAI_INSIGHT_MODEL: gpt-4.1-mini
+      EVAL_JUDGE_MODEL: ${EVAL_JUDGE_MODEL:-gpt-5.4-mini-2026-03-17}
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@eval-db:5432/c2_app_eval
+      EVAL_DATABASE_URL: postgresql+psycopg://postgres:postgres@eval-db:5432/c2_app_eval
+      EVAL_ISOLATED: "1"
+      APP_SECRET_KEY: eval-only-secret
+      APP_SESSION_EPOCH: eval-session
+      RAG_AUTO_INGEST_ON_STARTUP: "false"
+      EXPOSE_AI_EVIDENCE: "true"
+
+  eval-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.eval
+    depends_on:
+      eval-seed:
+        condition: service_completed_successfully
+    environment:
+      <<: *eval-environment
+      RAG_AUTO_INGEST_ON_STARTUP: "true"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  eval-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.eval
+    depends_on:
+      eval-backend:
+        condition: service_healthy
+    environment:
+      <<: *eval-environment
+      EVAL_BACKEND_URL: http://eval-backend:8000
+      EVAL_PARENT_EMAIL: parent.minh@englishcenter.test
+      EVAL_PARENT_PASSWORD: Password123!
+      EVAL_TIMEOUT_SECONDS: "90"
+      EVAL_CASE_SUITE: ${EVAL_CASE_SUITE:-}
+      EVAL_RESULT_FILE: /app/eval-results/${EVAL_RUN_ID:-eval-online}.json
+    volumes:
+      - ./eval-results:/app/eval-results
+    command: ["sh", "-c", "python -m evals.wait_ready || exit $$?; python -m evals.run --suite online --output $$EVAL_RESULT_FILE; status=$$?; if [ -f $$EVAL_RESULT_FILE ]; then python -m evals.report --input $$EVAL_RESULT_FILE; fi; exit $$status"]

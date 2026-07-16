@@ -1,0 +1,24 @@
+{
+  "name": "ai-parent-assistant-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/frontend",
+    "apps/frontend2",
+    "apps/zalo-bot-service"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/frontend run dev",
+    "build": "npm --workspace apps/frontend run build",
+    "lint": "npm --workspace apps/frontend run lint",
+    "typecheck": "npm --workspace apps/frontend run typecheck",
+    "frontend2:dev": "npm --workspace apps/frontend2 run dev",
+    "frontend2:build": "npm --workspace apps/frontend2 run build",
+    "frontend2:lint": "npm --workspace apps/frontend2 run lint",
+    "frontend2:typecheck": "npm --workspace apps/frontend2 run typecheck",
+    "bot:dev": "npm --workspace apps/zalo-bot-service run dev",
+    "bot:build": "npm --workspace apps/zalo-bot-service run build",
+    "backend:dev": "uvicorn app.main:app --reload --app-dir apps/backend",
+    "backend:test": "pytest apps/backend/tests"
+  }
+}

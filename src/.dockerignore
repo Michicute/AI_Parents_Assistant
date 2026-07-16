@@ -1,0 +1,10 @@
+node_modules
+apps/*/node_modules
+apps/*/.next
+apps/backend
+apps/zalo-bot-service
+!apps/zalo-bot-service/package.json
+docs
+supabase
+docker-compose.yml
+c2_app_test_data_*.dump

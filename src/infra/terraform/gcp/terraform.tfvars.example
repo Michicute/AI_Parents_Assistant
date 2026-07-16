@@ -1,0 +1,37 @@
+gcp_project_id = "your-gcp-project-id"
+gcp_region     = "asia-southeast1"
+gcp_zone       = "asia-southeast1-a"
+
+project_name = "ai-parent-assistant"
+environment  = "prod"
+
+# Similar starter size to AWS t3.large: 2 vCPU, 8 GB RAM.
+machine_type = "e2-standard-2"
+
+# Keep room for Docker images, blue/green slots, PostgreSQL data, logs, and build layers.
+boot_disk_size_gb = 50
+boot_disk_type    = "pd-balanced"
+
+# Paste your SSH public key content here.
+ssh_username   = "ubuntu"
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your-email@example.com"
+
+# Keep SSH narrow to your office/home IP when possible.
+ssh_allowed_cidrs = ["203.0.113.10/32"]
+
+# Web traffic should reach the origin only through Cloudflare proxy ranges.
+# Leave unset to use the default Cloudflare allowlist from variables.tf.
+# Do not use ["0.0.0.0/0"] for production.
+# app_allowed_cidrs = ["173.245.48.0/20", "103.21.244.0/22", "..."]
+
+# Leave empty to create a dedicated VPC/subnet for this app.
+network_name     = ""
+subnetwork_name  = ""
+subnetwork_cidr  = "10.20.0.0/24"
+
+assign_static_ip = true
+app_directory    = "/opt/c2-app"
+
+# Optional existing service account for the VM. Leave empty to avoid requiring
+# iam.serviceAccounts.create during Terraform apply.
+vm_service_account_email = ""

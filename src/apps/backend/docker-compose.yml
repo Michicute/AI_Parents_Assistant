@@ -1,0 +1,67 @@
+services:
+  frontend:
+    image: node:20-alpine
+    container_name: frontend-web
+    working_dir: /workspace
+    command: sh -c "node -v && npm ci && npm --workspace apps/frontend run dev -- --hostname 0.0.0.0"
+    depends_on:
+      - backend
+    ports:
+      - "3002:3000"
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ../../:/workspace
+      - frontend_node_modules:/workspace/node_modules
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: backend-postgres
+    environment:
+      POSTGRES_DB: c2_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - backend_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d c2_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-api
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: development
+      AI_PROVIDER: openai
+      EMBEDDING_PROVIDER: openai
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-}
+      OPENAI_INSIGHT_MODEL: ${OPENAI_INSIGHT_MODEL:-}
+      OPENAI_DRAFT_MODEL: ${OPENAI_DRAFT_MODEL:-}
+      OPENAI_VISION_MODEL: ${OPENAI_VISION_MODEL:-}
+      RAG_AUTO_INGEST_ON_STARTUP: "true"
+      APP_SECRET_KEY: dev-postgres-secret
+      APP_SESSION_EPOCH: dev-docker-session
+      FRONTEND_URL: http://localhost:3002
+      BACKEND_URL: http://localhost:8000
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/c2_app
+    restart: unless-stopped
+
+volumes:
+  backend_postgres_data:
+  frontend_node_modules:

@@ -1,0 +1,17 @@
+.env
+.env.local
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+node_modules/
+.next/
+*.tsbuildinfo
+out/
+dist/
+coverage/
+eval-results/
+
+.DS_Store

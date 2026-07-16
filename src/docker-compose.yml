@@ -1,0 +1,85 @@
+services:
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "node -v && test -d node_modules/next || npm ci && rm -rf apps/frontend/.next && npm --workspace apps/frontend run dev -- --hostname 0.0.0.0"
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./apps/frontend:/app/apps/frontend
+      - ./images:/app/images
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "3002:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./apps/backend
+    environment:
+      APP_ENV: development
+      AI_PROVIDER: openai
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-}
+      OPENAI_INSIGHT_MODEL: ${OPENAI_INSIGHT_MODEL:-}
+      OPENAI_DRAFT_MODEL: ${OPENAI_DRAFT_MODEL:-}
+      OPENAI_VISION_MODEL: ${OPENAI_VISION_MODEL:-}
+      RAG_AUTO_INGEST_ON_STARTUP: "true"
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-dev-docker-local-secret}
+      APP_SESSION_EPOCH: ${APP_SESSION_EPOCH:-dev-docker-session}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/c2_app
+      FRONTEND_URL: http://localhost:3002
+      BACKEND_URL: http://backend:8000
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET:-change-me}
+      ZALO_SERVICE_URL: http://zalo-bot-service:4001
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  zalo-bot-service:
+    build:
+      context: ./apps/zalo-bot-service
+    environment:
+      PORT: "4001"
+      BACKEND_URL: http://backend:8000
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET:-change-me}
+      ZALO_ADAPTER: ${ZALO_ADAPTER:-zca-js}
+      ZALO_ACCOUNT_LABEL: ${ZALO_ACCOUNT_LABEL:-default}
+      ZALO_LANGUAGE: ${ZALO_LANGUAGE:-vi}
+    ports:
+      - "4001:4001"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: c2_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - app-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d c2_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  app-postgres-data:
+  frontend-node-modules:

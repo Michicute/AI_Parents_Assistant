@@ -1,0 +1,40 @@
+# Only keep deploy/, src/, .github/ and this file trackable at repo root.
+/*
+!/.gitignore
+!/.github/
+!/.opencode/
+!/deploy/
+!/src/
+
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+
+# AI logs — tracked structure, ignored content
+.ai-log/*.jsonl
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.auto.tfvars.json
+crash.log
+
+# EC2 deploy artifacts
+deploy/ec2/.env.prod
+deploy/ec2/nginx/certs/*
+!deploy/ec2/nginx/certs/.gitkeep

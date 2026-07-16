@@ -1,0 +1,125 @@
+name: Deploy AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-aws-ec2
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure remote app directory exists
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ vars.EC2_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.EC2_APP_DIR || '/opt/c2-app' }}"
+            sudo mkdir -p "$APP_DIR/src" "$APP_DIR/deploy/ec2/nginx/conf.d" /opt/c2-certs
+            sudo chown -R ubuntu:ubuntu "$APP_DIR"
+
+      - name: Copy source and deploy files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ vars.EC2_PORT || 22 }}
+          source: "src,deploy/ec2"
+          target: ${{ vars.EC2_APP_DIR || '/opt/c2-app' }}
+          rm: false
+
+      - name: Normalize copied paths on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ vars.EC2_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.EC2_APP_DIR || '/opt/c2-app' }}"
+
+            if [ -d "$APP_DIR/src/src" ]; then
+              rm -rf "$APP_DIR/src.tmp"
+              mv "$APP_DIR/src" "$APP_DIR/src.tmp"
+              mv "$APP_DIR/src.tmp/src" "$APP_DIR/src"
+              rm -rf "$APP_DIR/src.tmp"
+            fi
+
+            if [ -d "$APP_DIR/deploy/ec2/deploy/ec2" ]; then
+              rm -rf "$APP_DIR/deploy/ec2.tmp"
+              mv "$APP_DIR/deploy/ec2" "$APP_DIR/deploy/ec2.tmp"
+              mv "$APP_DIR/deploy/ec2.tmp/deploy/ec2" "$APP_DIR/deploy/ec2"
+              rm -rf "$APP_DIR/deploy/ec2.tmp"
+            fi
+
+            test -f "$APP_DIR/deploy/ec2/docker-compose.prod.yml"
+            test -f "$APP_DIR/deploy/ec2/nginx/conf.d/default.conf.template"
+            test -f "$APP_DIR/deploy/ec2/deploy-slot.sh"
+
+      - name: Write production env file on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ vars.EC2_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.EC2_APP_DIR || '/opt/c2-app' }}"
+            cat > "$APP_DIR/deploy/ec2/.env.prod" <<'EOF'
+            APP_DOMAIN=${{ vars.APP_DOMAIN }}
+            NEXT_PUBLIC_BACKEND_URL=${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+            FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            BACKEND_URL=${{ vars.BACKEND_URL }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            OPENAI_MODEL=${{ vars.OPENAI_MODEL || 'gpt-4.1-mini' }}
+            OPENAI_TIMEOUT_SECONDS=${{ vars.OPENAI_TIMEOUT_SECONDS || '45' }}
+            OPENAI_MAX_RETRIES=${{ vars.OPENAI_MAX_RETRIES || '1' }}
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            AI_PROVIDER=${{ vars.AI_PROVIDER || 'openai' }}
+            EMBEDDING_PROVIDER=${{ vars.EMBEDDING_PROVIDER || 'openai' }}
+            RAG_AUTO_INGEST_ON_STARTUP=${{ vars.RAG_AUTO_INGEST_ON_STARTUP || 'false' }}
+            APP_ENV=production
+            APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }}
+            APP_SESSION_EPOCH=${{ vars.APP_SESSION_EPOCH }}
+            POSTGRES_DB=${{ vars.POSTGRES_DB || 'c2_app' }}
+            POSTGRES_USER=${{ vars.POSTGRES_USER || 'postgres' }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            INTEGRATION_SHARED_SECRET=${{ secrets.INTEGRATION_SHARED_SECRET }}
+            ZALO_LINK_SESSION_TTL_MINUTES=${{ vars.ZALO_LINK_SESSION_TTL_MINUTES || '30' }}
+            ZALO_SESSION_ENCRYPTION_KEY=${{ secrets.ZALO_SESSION_ENCRYPTION_KEY }}
+            ZALO_ADAPTER=${{ vars.ZALO_ADAPTER || 'zca-js' }}
+            ZALO_ACCOUNT_LABEL=${{ vars.ZALO_ACCOUNT_LABEL || 'default' }}
+            ZALO_LANGUAGE=${{ vars.ZALO_LANGUAGE || 'vi' }}
+            ZALO_BOT_DISPLAY_NAME=${{ vars.ZALO_BOT_DISPLAY_NAME || 'Zalo Bot trung tam' }}
+            ZALO_LINK_MESSAGE_PREFIX=${{ vars.ZALO_LINK_MESSAGE_PREFIX || 'LINK' }}
+            ZALO_BOT_ENABLED_BLUE=false
+            ZALO_BOT_ENABLED_GREEN=false
+            SCHEDULED_ZALO_WORKER_ENABLED_BLUE=false
+            SCHEDULED_ZALO_WORKER_ENABLED_GREEN=false
+            EOF
+
+      - name: Deploy stack on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ vars.EC2_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.EC2_APP_DIR || '/opt/c2-app' }}"
+            APP_DIR="$APP_DIR" sh "$APP_DIR/deploy/ec2/deploy-slot.sh" auto

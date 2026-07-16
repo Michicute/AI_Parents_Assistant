@@ -1,0 +1,31 @@
+aws_region          = "ap-southeast-1"
+project_name        = "ai-parent-assistant"
+environment         = "prod"
+
+# Recommended starter size for this project on a single EC2 host.
+# This balances cost against the current stack: nginx + postgres + blue/green app slots.
+instance_type       = "t3.large"
+
+# Recommended root volume size.
+# 50 GB is a safer default than 40 GB when you keep Docker images, blue/green slots,
+# PostgreSQL data, logs, and temporary build layers on the same instance.
+root_volume_size_gb = 50
+
+# Paste your SSH public key content here.
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your-email@example.com"
+
+# Keep SSH narrow to your office/home IP when possible.
+ssh_allowed_cidrs = ["203.0.113.10/32"]
+
+# Public web traffic.
+app_allowed_cidrs = ["0.0.0.0/0"]
+
+# Default VPC is the simplest starting point.
+use_default_vpc = true
+
+# Optional overrides if you do not want the default VPC/subnet.
+# vpc_id    = "vpc-xxxxxxxx"
+# subnet_id = "subnet-xxxxxxxx"
+
+assign_elastic_ip = true
+app_directory     = "/opt/c2-app"

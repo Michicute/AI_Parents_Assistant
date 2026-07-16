@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>English Learning Center Parent AI Assistant</title>
+    <link rel="stylesheet" href="./gate3-pitch.css" />
+  </head>
+  <body>
+    <div class="deck-shell">
+      <aside class="rail" aria-hidden="true">
+        <p class="rail-label">Pitch</p>
+        <p class="rail-count"><span id="current-slide">01</span> / <span id="total-slides">09</span></p>
+        <div class="rail-progress">
+          <div id="progress-fill" class="rail-progress-fill"></div>
+        </div>
+        <nav id="dot-nav" class="dot-nav" aria-label="Slide navigation"></nav>
+      </aside>
+
+      <main id="deck" class="deck" aria-live="polite">
+        <section class="slide" data-title="Opening">
+          <div class="slide-card hero-slide">
+            <div class="hero-copy">
+              <p class="eyebrow">AI20K Build Phase</p>
+              <h1>English Learning Center Parent AI Assistant</h1>
+              <p class="hero-text">
+                Trợ lý AI giúp trung tâm tiếng Anh kết nối phụ huynh, học sinh và giáo viên trên một hệ thống học tập được phân quyền.
+              </p>
+              <div class="hero-tags">
+                <span class="tag">Parent support AI</span>
+                <span class="tag">Assessment workflow</span>
+                <span class="tag">RBAC + RAG</span>
+                <span class="tag">Zalo-ready</span>
+              </div>
+              <div class="hero-bottom-grid">
+                <article class="hero-role-card">
+                  <p class="card-kicker">Parent</p>
+                  <h3>Hiểu tiến độ học tập</h3>
+                </article>
+                <article class="hero-role-card">
+                  <p class="card-kicker">Student</p>
+                  <h3>Làm assessment online</h3>
+                </article>
+                <article class="hero-role-card">
+                  <p class="card-kicker">Teacher</p>
+                  <h3>Quản lý lớp và bài làm</h3>
+                </article>
+              </div>
+            </div>
+            <div class="hero-panel">
+              <div class="metric-card">
+                <p class="metric-label">Core message</p>
+                <p class="metric-value">Không làm hộ bài</p>
+                <p class="metric-note">Chỉ giải thích tiến độ, phân tích bài làm và gợi ý hỗ trợ phù hợp.</p>
+              </div>
+              <div class="metric-grid">
+                <article class="mini-card">
+                  <p class="mini-title">Primary user</p>
+                  <p>Phụ huynh</p>
+                </article>
+                <article class="mini-card">
+                  <p class="mini-title">Other roles</p>
+                  <p>Học sinh, giáo viên, admin</p>
+                </article>
+                <article class="mini-card">
+                  <p class="mini-title">Data source</p>
+                  <p>PostgreSQL + RAG docs</p>
+                </article>
+                <article class="mini-card">
+                  <p class="mini-title">AI boundary</p>
+                  <p>Backend quyết định quyền</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Problem">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Problem</p>
+              <h2>Phụ huynh quan tâm đến việc học của con, nhưng không có một góc nhìn rõ ràng và dễ hiểu.</h2>
+            </div>
+            <div class="problem-layout">
+              <div class="problem-list">
+                <article class="content-card">
+                  <p class="card-kicker">Pain 01</p>
+                  <h3>Dữ liệu học tập bị rời rạc</h3>
+                  <p>Điểm số, nhận xét giáo viên, chuyên cần và assessment nằm ở nhiều chỗ khác nhau.</p>
+                </article>
+                <article class="content-card">
+                  <p class="card-kicker">Pain 02</p>
+                  <h3>Phụ huynh khó biết nên làm gì tiếp theo</h3>
+                  <p>Nhìn thấy điểm thấp chưa đủ, họ cần hiểu nguyên nhân và cách hỗ trợ con ở nhà.</p>
+                </article>
+                <article class="content-card">
+                  <p class="card-kicker">Pain 03</p>
+                  <h3>AI giáo dục rất dễ đi sai hướng</h3>
+                  <p>Nếu không có guardrails, AI có thể bịa dữ liệu, vượt quyền hoặc làm hộ bài cho học sinh.</p>
+                </article>
+              </div>
+              <div class="problem-visual">
+                <div class="visual-card">
+                  <p class="card-kicker">Current state</p>
+                  <h3>Phụ huynh nhìn thấy nhiều dữ liệu, nhưng thiếu một câu trả lời rõ ràng.</h3>
+                  <div class="pain-bars">
+                    <div class="pain-row">
+                      <span>Dữ liệu phân tán</span>
+                      <div class="pain-track"><div class="pain-fill fill-88"></div></div>
+                    </div>
+                    <div class="pain-row">
+                      <span>Khó hành động</span>
+                      <div class="pain-track"><div class="pain-fill fill-82"></div></div>
+                    </div>
+                    <div class="pain-row">
+                      <span>Rủi ro AI sai</span>
+                      <div class="pain-track"><div class="pain-fill fill-74 danger-fill"></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Solution">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Solution</p>
+              <h2>Sản phẩm của bọn mình biến dữ liệu học tập thành trợ lý AI thực sự hữu ích cho trung tâm tiếng Anh.</h2>
+            </div>
+            <div class="two-grid">
+              <article class="feature-panel accent-panel">
+                <p class="card-kicker">Giá trị cốt lõi</p>
+                <h3>AI giải thích tiến độ học tập bằng ngôn ngữ phụ huynh dễ hiểu.</h3>
+                <p>Hệ thống trả lời dựa trên dữ liệu được phân quyền, phân tích strengths, gaps và gợi ý hỗ trợ tại nhà.</p>
+              </article>
+              <div class="feature-list">
+                <article class="content-card">
+                  <h3>Cho phụ huynh</h3>
+                  <p>Xem dashboard, hỏi AI về tiến độ, assessment, teacher feedback và policy.</p>
+                </article>
+                <article class="content-card">
+                  <h3>Cho học sinh</h3>
+                  <p>Làm assessment online, submit bài và được lưu kết quả có cấu trúc.</p>
+                </article>
+                <article class="content-card">
+                  <h3>Cho giáo viên</h3>
+                  <p>Quản lý lớp, attendance, điểm số, assessment và bài làm của học sinh.</p>
+                </article>
+              </div>
+            </div>
+            <div class="flow-strip">
+              <div class="flow-node">Structured data</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">RBAC check</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Authorized retrieval</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Parent-facing AI answer</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Demo">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Product Demo</p>
+              <h2>Luồng demo bám sát các màn hình thật có trong repo.</h2>
+            </div>
+            <div class="demo-grid">
+              <article class="demo-shot">
+                <div class="demo-topbar">
+                  <span></span><span></span><span></span>
+                </div>
+                <p class="demo-route">/parent/dashboard</p>
+                <h3>Parent Dashboard</h3>
+                <ul class="demo-points">
+                  <li>Chọn học viên liên kết</li>
+                  <li>Xem progress, attendance, feedback</li>
+                  <li>Nhận góc nhìn phụ huynh</li>
+                </ul>
+              </article>
+              <article class="demo-shot">
+                <div class="demo-topbar">
+                  <span></span><span></span><span></span>
+                </div>
+                <p class="demo-route">/student/assessments/[id]</p>
+                <h3>Student Assessment Flow</h3>
+                <ul class="demo-points">
+                  <li>Start attempt</li>
+                  <li>Làm bài và submit</li>
+                  <li>Ghi nhận trạng thái và câu trả lời</li>
+                </ul>
+              </article>
+              <article class="demo-shot">
+                <div class="demo-topbar">
+                  <span></span><span></span><span></span>
+                </div>
+                <p class="demo-route">/teacher/dashboard</p>
+                <h3>Teacher Workspace</h3>
+                <ul class="demo-points">
+                  <li>Xem lớp phụ trách</li>
+                  <li>Điểm danh và nhập điểm</li>
+                  <li>Tạo assessment và xem bài làm</li>
+                </ul>
+              </article>
+            </div>
+            <div class="demo-note">
+              Demo live nên đi theo thứ tự: phụ huynh hỏi AI -> học sinh làm assessment -> giáo viên xem và quản lý kết quả.
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="USP">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Unique Selling Point</p>
+              <h2>Điểm khác biệt không nằm ở “chatbot”, mà nằm ở lớp dữ liệu và phân quyền phía sau nó.</h2>
+            </div>
+            <div class="usp-layout">
+              <div class="compare-card">
+                <div class="compare-head">
+                  <span>Generic Edu Chatbot</span>
+                  <span>Our Product</span>
+                </div>
+                <div class="compare-row">
+                  <span>Trả lời chung chung</span>
+                  <span>Trả lời theo dữ liệu học tập đã phân quyền</span>
+                </div>
+                <div class="compare-row">
+                  <span>Dễ làm hộ bài</span>
+                  <span>Từ chối submit-ready answers</span>
+                </div>
+                <div class="compare-row">
+                  <span>Không gắn với workflow thật</span>
+                  <span>Có dashboard, assessment, attendance, Zalo</span>
+                </div>
+              </div>
+              <div class="feature-list">
+                <article class="content-card">
+                  <h3>Parent-support first</h3>
+                  <p>Tập trung vào việc giúp phụ huynh hiểu và đồng hành, không biến AI thành máy làm bài hộ.</p>
+                </article>
+                <article class="content-card">
+                  <h3>RBAC trước AI</h3>
+                  <p>Backend kiểm tra quyền truy cập trước khi lấy context cho LLM.</p>
+                </article>
+                <article class="content-card">
+                  <h3>Structured data tách khỏi RAG</h3>
+                  <p>Điểm, attendance, assessment lấy từ PostgreSQL; policy và handbook mới đi qua RAG.</p>
+                </article>
+                <article class="content-card">
+                  <h3>Zalo integration</h3>
+                  <p>Mở rộng kênh hỗ trợ phụ huynh bằng một bot service riêng thay vì chỉ dừng ở web app.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Tech Stack">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Tech Stack</p>
+              <h2>Stack trong repo được thiết kế theo đúng kiến trúc web app + AI backend + data layer.</h2>
+            </div>
+            <div class="stack-grid">
+              <article class="stack-card">
+                <p class="card-kicker">Frontend</p>
+                <h3>Next.js + TypeScript + Tailwind CSS</h3>
+              </article>
+              <article class="stack-card">
+                <p class="card-kicker">Backend</p>
+                <h3>FastAPI + Python</h3>
+              </article>
+              <article class="stack-card">
+                <p class="card-kicker">Database</p>
+                <h3>PostgreSQL + pgvector</h3>
+              </article>
+              <article class="stack-card">
+                <p class="card-kicker">AI</p>
+                <h3>OpenAI-first provider boundary</h3>
+              </article>
+              <article class="stack-card">
+                <p class="card-kicker">Security</p>
+                <h3>JWT local auth + server-side RBAC</h3>
+              </article>
+              <article class="stack-card">
+                <p class="card-kicker">Extra service</p>
+                <h3>Zalo bot service + Docker deploy flow</h3>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Audience">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Target Audience</p>
+              <h2>Người dùng mục tiêu đã được xác định rất rõ trong product guide của repo.</h2>
+            </div>
+            <div class="audience-layout">
+              <div class="three-grid">
+                <article class="content-card audience-card">
+                  <p class="card-kicker">Primary</p>
+                  <h3>Parents</h3>
+                  <p>Cần một cách dễ hiểu để theo dõi tiến độ học tiếng Anh của con.</p>
+                </article>
+                <article class="content-card audience-card">
+                  <p class="card-kicker">Secondary</p>
+                  <h3>Teachers</h3>
+                  <p>Cần quản lý lớp, assessment, điểm số và parent-facing feedback.</p>
+                </article>
+                <article class="content-card audience-card">
+                  <p class="card-kicker">Operations</p>
+                  <h3>Admins</h3>
+                  <p>Quản lý user, lớp học, liên kết parent-student và tài liệu trung tâm.</p>
+                </article>
+              </div>
+              <div class="audience-band">
+                <span>Phụ huynh là người dùng chính</span>
+                <span>Giáo viên là người tạo và quản lý dữ liệu học tập</span>
+                <span>Admin vận hành hệ thống</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Team">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Team</p>
+              <h2>Các builder được nhận diện từ lịch sử đóng góp trong repo.</h2>
+            </div>
+            <div class="team-grid">
+              <article class="team-card">
+                <div class="avatar-ring">H</div>
+                <h3>Nguyen Hung</h3>
+                <p>Repository contributor</p>
+              </article>
+              <article class="team-card">
+                <div class="avatar-ring">C</div>
+                <h3>Chi Nguyen</h3>
+                <p>Repository contributor</p>
+              </article>
+              <article class="team-card">
+                <div class="avatar-ring">M</div>
+                <h3>Nguyen Dinh Minh Chi</h3>
+                <p>Repository contributor</p>
+              </article>
+            </div>
+            <p class="team-note">Slide này lấy tên từ `git shortlog` trong repo. Nếu đội muốn hiện vai trò cụ thể hơn, chỉ cần thay subtitle của từng thành viên.</p>
+          </div>
+        </section>
+
+        <section class="slide" data-title="Roadmap">
+          <div class="slide-card">
+            <div class="slide-head">
+              <p class="eyebrow">Roadmap</p>
+              <h2>Sau Build Phase, dự án có thể đi tiếp theo hướng mở rộng tính năng và đưa lên production thật.</h2>
+            </div>
+            <div class="roadmap-grid">
+              <article class="roadmap-card">
+                <p class="card-kicker">Phase 1</p>
+                <h3>Public deployment</h3>
+                <p>Hoàn thiện production URL, benchmark, guardrails và smoke test flow.</p>
+              </article>
+              <article class="roadmap-card">
+                <p class="card-kicker">Phase 2</p>
+                <h3>Better parent experience</h3>
+                <p>Mở rộng summary cho assessment, score trend và khuyến nghị tại nhà.</p>
+              </article>
+              <article class="roadmap-card">
+                <p class="card-kicker">Phase 3</p>
+                <h3>Zalo + channel expansion</h3>
+                <p>Đẩy mạnh Zalo chat flow để phụ huynh có thể tương tác ngoài web app.</p>
+              </article>
+              <article class="roadmap-card">
+                <p class="card-kicker">Phase 4</p>
+                <h3>Model & analytics upgrade</h3>
+                <p>Mở rộng benchmark, Claude compatibility và insight analytics cho trung tâm.</p>
+              </article>
+            </div>
+            <div class="timeline-line">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="controls">
+        <button id="prev-btn" class="control-btn" type="button">Previous</button>
+        <button id="next-btn" class="control-btn primary" type="button">Next</button>
+      </footer>
+    </div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const deck = document.getElementById("deck");
+      const currentSlide = document.getElementById("current-slide");
+      const totalSlides = document.getElementById("total-slides");
+      const progressFill = document.getElementById("progress-fill");
+      const dotNav = document.getElementById("dot-nav");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+
+      let activeIndex = 0;
+      totalSlides.textContent = String(slides.length).padStart(2, "0");
+
+      slides.forEach((slide, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dot-btn";
+        button.setAttribute("aria-label", `Go to slide ${index + 1}`);
+        button.addEventListener("click", () => goToSlide(index));
+        dotNav.appendChild(button);
+      });
+
+      const dots = Array.from(document.querySelectorAll(".dot-btn"));
+
+      function goToSlide(index) {
+        activeIndex = Math.max(0, Math.min(index, slides.length - 1));
+        slides[activeIndex].scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+        updateUI();
+      }
+
+      function updateUI() {
+        currentSlide.textContent = String(activeIndex + 1).padStart(2, "0");
+        progressFill.style.height = `${((activeIndex + 1) / slides.length) * 100}%`;
+        dots.forEach((dot, index) => dot.classList.toggle("active", index === activeIndex));
+        prevBtn.disabled = activeIndex === 0;
+        nextBtn.disabled = activeIndex === slides.length - 1;
+      }
+
+      prevBtn.addEventListener("click", () => goToSlide(activeIndex - 1));
+      nextBtn.addEventListener("click", () => goToSlide(activeIndex + 1));
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown") goToSlide(activeIndex + 1);
+        if (event.key === "ArrowLeft" || event.key === "PageUp") goToSlide(activeIndex - 1);
+      });
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const index = slides.indexOf(entry.target);
+              if (index >= 0) {
+                activeIndex = index;
+                updateUI();
+              }
+            }
+          });
+        },
+        { root: deck, threshold: 0.62 }
+      );
+
+      slides.forEach((slide) => observer.observe(slide));
+      updateUI();
+    </script>
+  </body>
+</html>

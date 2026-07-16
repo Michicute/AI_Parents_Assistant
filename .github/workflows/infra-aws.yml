@@ -1,0 +1,58 @@
+name: Apply AWS Infra
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/infra/terraform/aws
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Write Terraform variables
+        shell: bash
+        run: |
+          cat > github.auto.tfvars <<EOF
+          aws_region = "${{ vars.AWS_REGION }}"
+          project_name = "${{ vars.AWS_PROJECT_NAME || 'ai-parent-assistant' }}"
+          environment = "${{ vars.AWS_ENVIRONMENT || 'prod' }}"
+          instance_type = "${{ vars.EC2_INSTANCE_TYPE || 't3.large' }}"
+          root_volume_size_gb = ${{ vars.EC2_ROOT_VOLUME_SIZE_GB || 40 }}
+          ssh_public_key = <<EOKEY${{ secrets.EC2_SSH_PUBLIC_KEY }}
+          EOKEY
+          ssh_allowed_cidrs = ${{ vars.EC2_SSH_ALLOWED_CIDRS_JSON || '["0.0.0.0/0"]' }}
+          app_allowed_cidrs = ${{ vars.EC2_APP_ALLOWED_CIDRS_JSON || '["0.0.0.0/0"]' }}
+          use_default_vpc = ${{ vars.EC2_USE_DEFAULT_VPC || 'true' }}
+          assign_elastic_ip = ${{ vars.EC2_ASSIGN_ELASTIC_IP || 'true' }}
+          app_directory = "${{ vars.EC2_APP_DIR || '/opt/c2-app' }}"
+          enable_docker_install_user_data = ${{ vars.EC2_ENABLE_DOCKER_INSTALL_USER_DATA || 'true' }}
+          EOF
+
+      - name: Terraform init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY || 'aws-ec2/prod.tfstate' }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve -input=false
+
+      - name: Show outputs
+        run: terraform output
