@@ -1,0 +1,92 @@
+name: Apply GCP Infra
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-gcp
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/infra/terraform/gcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Authenticate to Google Cloud
+        shell: bash
+        env:
+          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -eu
+          test -n "$GCP_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$GCP_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/gcp-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Write Terraform backend
+        shell: bash
+        run: |
+          set -eu
+          test -n "${{ vars.GCP_TF_STATE_BUCKET }}"
+          cat > backend.github.tf <<'EOF'
+          terraform {
+            backend "gcs" {}
+          }
+          EOF
+
+      - name: Write Terraform variables
+        shell: bash
+        run: |
+          set -eu
+          cat > github.auto.tfvars <<EOF
+          gcp_project_id = "${{ vars.GCP_PROJECT_ID }}"
+          gcp_region = "${{ vars.GCP_REGION || 'asia-southeast1' }}"
+          gcp_zone = "${{ vars.GCP_ZONE || 'asia-southeast1-a' }}"
+          project_name = "${{ vars.GCP_PROJECT_NAME || 'ai-parent-assistant' }}"
+          environment = "${{ vars.GCP_ENVIRONMENT || 'prod' }}"
+          machine_type = "${{ vars.GCE_MACHINE_TYPE || 'e2-standard-2' }}"
+          boot_disk_size_gb = ${{ vars.GCE_BOOT_DISK_SIZE_GB || 50 }}
+          boot_disk_type = "${{ vars.GCE_BOOT_DISK_TYPE || 'pd-balanced' }}"
+          ssh_username = "${{ vars.GCE_USERNAME || 'ubuntu' }}"
+          ssh_public_key = <<EOKEY
+          ${{ secrets.GCE_SSH_PUBLIC_KEY }}
+          EOKEY
+          ssh_allowed_cidrs = ${{ vars.GCE_SSH_ALLOWED_CIDRS_JSON || '[]' }}
+          app_allowed_cidrs = ${{ vars.GCE_APP_ALLOWED_CIDRS_JSON || '["173.245.48.0/20","103.21.244.0/22","103.22.200.0/22","103.31.4.0/22","141.101.64.0/18","108.162.192.0/18","190.93.240.0/20","188.114.96.0/20","197.234.240.0/22","198.41.128.0/17","162.158.0.0/15","104.16.0.0/13","104.24.0.0/14","172.64.0.0/13","131.0.72.0/22","2400:cb00::/32","2606:4700::/32","2803:f800::/32","2405:b500::/32","2405:8100::/32","2a06:98c0::/29","2c0f:f248::/32"]' }}
+          network_name = "${{ vars.GCP_NETWORK_NAME }}"
+          subnetwork_name = "${{ vars.GCP_SUBNETWORK_NAME }}"
+          subnetwork_cidr = "${{ vars.GCP_SUBNETWORK_CIDR || '10.20.0.0/24' }}"
+          assign_static_ip = ${{ vars.GCE_ASSIGN_STATIC_IP || 'true' }}
+          app_directory = "${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
+          enable_docker_install_startup_script = ${{ vars.GCE_ENABLE_DOCKER_INSTALL_STARTUP_SCRIPT || 'true' }}
+          vm_service_account_email = "${{ vars.GCE_VM_SERVICE_ACCOUNT_EMAIL }}"
+          EOF
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.GCP_TF_STATE_BUCKET }}" \
+            -backend-config="prefix=${{ vars.GCP_TF_STATE_PREFIX || 'gce-prod' }}"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve -input=false
+
+      - name: Show outputs
+        run: terraform output
