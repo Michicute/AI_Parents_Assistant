@@ -119,6 +119,25 @@ jobs:
             EOF
             chmod 600 "$APP_DIR/deploy/ec2/.env.prod"
 
+      - name: Ensure VM swap space
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          script: |
+            if [ ! -f /swapfile ]; then
+              sudo fallocate -l 4G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+            elif ! swapon --show=NAME | grep -qx /swapfile; then
+              sudo swapon /swapfile
+            fi
+            free -h
+
       - name: Deploy stack on GCE
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -132,6 +151,7 @@ jobs:
             APP_DIR="$APP_DIR" sh "$APP_DIR/deploy/ec2/deploy-slot.sh" auto
 
       - name: Show container status
+        if: always()
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
@@ -141,3 +161,4 @@ jobs:
           script: |
             APP_DIR="${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
             sudo docker compose -f "$APP_DIR/deploy/ec2/docker-compose.prod.yml" --env-file "$APP_DIR/deploy/ec2/.env.prod" ps
+            sudo docker compose -f "$APP_DIR/deploy/ec2/docker-compose.prod.yml" --env-file "$APP_DIR/deploy/ec2/.env.prod" logs --tail=120 || true
