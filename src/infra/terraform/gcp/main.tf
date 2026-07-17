@@ -91,11 +91,12 @@ resource "google_compute_address" "app" {
 }
 
 resource "google_compute_instance" "app" {
-  name         = "${local.name_prefix}-app"
-  machine_type = var.machine_type
-  zone         = var.gcp_zone
-  tags         = ["${local.name_prefix}-app"]
-  labels       = local.labels
+  name                      = "${local.name_prefix}-app"
+  machine_type              = var.machine_type
+  zone                      = var.gcp_zone
+  allow_stopping_for_update = true
+  tags                      = ["${local.name_prefix}-app"]
+  labels                    = local.labels
 
   boot_disk {
     initialize_params {
