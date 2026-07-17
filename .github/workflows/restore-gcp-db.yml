@@ -1,0 +1,104 @@
+name: Restore GCP DB From Dump
+
+on:
+  workflow_dispatch:
+    inputs:
+      dump_path:
+        description: "Path to the PostgreSQL custom dump in the repository"
+        required: true
+        default: "src/c2_app_backup_20260703_043118.dump"
+      confirm:
+        description: "Type RESTORE_GCP_DB to run the restore"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-gcp-db
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    if: ${{ github.event.inputs.confirm == 'RESTORE_GCP_DB' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare dump artifact
+        run: |
+          test -f "${{ github.event.inputs.dump_path }}"
+          cp "${{ github.event.inputs.dump_path }}" c2_restore.dump
+          ls -lh c2_restore.dump
+
+      - name: Ensure remote restore directory exists
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
+            mkdir -p "$APP_DIR/restore"
+
+      - name: Copy dump to GCE
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          source: "c2_restore.dump"
+          target: ${{ vars.GCE_APP_DIR || '/opt/c2-app' }}/restore
+          rm: false
+
+      - name: Restore dump into Postgres
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -eu
+            APP_DIR="${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
+            COMPOSE_FILE="$APP_DIR/deploy/ec2/docker-compose.prod.yml"
+            ENV_FILE="$APP_DIR/deploy/ec2/.env.prod"
+            DUMP_FILE="$APP_DIR/restore/c2_restore.dump"
+
+            test -f "$COMPOSE_FILE"
+            test -f "$ENV_FILE"
+            test -f "$DUMP_FILE"
+
+            sudo docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d db
+            DB_CONTAINER="$(sudo docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps -q db)"
+            test -n "$DB_CONTAINER"
+
+            sudo docker cp "$DUMP_FILE" "$DB_CONTAINER:/tmp/c2_restore.dump"
+            sudo docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T db sh -lc '
+              pg_restore \
+                --data-only \
+                --disable-triggers \
+                --no-owner \
+                --no-acl \
+                -U "$POSTGRES_USER" \
+                -d "$POSTGRES_DB" \
+                /tmp/c2_restore.dump
+            '
+
+      - name: Verify default users
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          script: |
+            APP_DIR="${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
+            COMPOSE_FILE="$APP_DIR/deploy/ec2/docker-compose.prod.yml"
+            ENV_FILE="$APP_DIR/deploy/ec2/.env.prod"
+            sudo docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T db sh -lc '
+              psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select email, role, is_active from users order by email;"
+            '
