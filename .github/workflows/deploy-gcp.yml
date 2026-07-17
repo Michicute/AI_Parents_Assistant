@@ -119,6 +119,26 @@ jobs:
             EOF
             chmod 600 "$APP_DIR/deploy/ec2/.env.prod"
 
+      - name: Ensure nginx origin certificate exists
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.GCE_HOST || vars.GCE_HOST }}
+          username: ${{ vars.GCE_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+          port: ${{ vars.GCE_PORT || 22 }}
+          script: |
+            APP_DOMAIN="${{ vars.APP_DOMAIN }}"
+            sudo mkdir -p /opt/c2-certs
+            if [ ! -s /opt/c2-certs/origin.crt ] || [ ! -s /opt/c2-certs/origin.key ]; then
+              sudo openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
+                -keyout /opt/c2-certs/origin.key \
+                -out /opt/c2-certs/origin.crt \
+                -subj "/CN=${APP_DOMAIN:-localhost}" \
+                -addext "subjectAltName=DNS:${APP_DOMAIN:-localhost},IP:127.0.0.1"
+              sudo chmod 600 /opt/c2-certs/origin.key
+              sudo chmod 644 /opt/c2-certs/origin.crt
+            fi
+
       - name: Ensure VM swap space
         uses: appleboy/ssh-action@v1.2.0
         with:
