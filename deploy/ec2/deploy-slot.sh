@@ -3,6 +3,7 @@ set -eu
 
 APP_DIR="${APP_DIR:-/opt/c2-app}"
 TARGET_SLOT="${1:-auto}"
+LOW_MEMORY_DEPLOY="${LOW_MEMORY_DEPLOY:-false}"
 COMPOSE_FILE="$APP_DIR/deploy/ec2/docker-compose.prod.yml"
 ENV_FILE="$APP_DIR/deploy/ec2/.env.prod"
 RUNTIME_ENV_FILE="$APP_DIR/deploy/ec2/.env.runtime"
@@ -102,6 +103,11 @@ cleanup_failed_deploy() {
 }
 
 trap cleanup_failed_deploy EXIT
+
+if [ "$LOW_MEMORY_DEPLOY" = "true" ]; then
+  echo "Low-memory deploy enabled; stopping $OLD_SLOT slot before starting $TARGET_SLOT"
+  stop_slot "$OLD_SLOT"
+fi
 
 compose build --pull "backend-$TARGET_SLOT" "frontend-$TARGET_SLOT" "zalo-bot-service-$TARGET_SLOT"
 compose up -d db

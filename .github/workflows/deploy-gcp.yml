@@ -148,7 +148,7 @@ jobs:
           command_timeout: 30m
           script: |
             APP_DIR="${{ vars.GCE_APP_DIR || '/opt/c2-app' }}"
-            APP_DIR="$APP_DIR" sh "$APP_DIR/deploy/ec2/deploy-slot.sh" auto
+            LOW_MEMORY_DEPLOY=true APP_DIR="$APP_DIR" sh "$APP_DIR/deploy/ec2/deploy-slot.sh" auto
 
       - name: Show container status
         if: always()
